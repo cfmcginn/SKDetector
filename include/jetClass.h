@@ -13,6 +13,7 @@ class jetClass{
   Float_t refpt_[nMaxJets];
   Float_t refphi_[nMaxJets];
   Float_t refeta_[nMaxJets];
+  Float_t refegfrac_[nMaxJets];
   Float_t ref2pt_[nMaxJets];
   Float_t ref2phi_[nMaxJets];
   Float_t ref2eta_[nMaxJets];

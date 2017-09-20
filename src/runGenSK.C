@@ -21,6 +21,7 @@
 #include "include/jetClass.h"
 #include "include/getLinBins.h"
 #include "include/etaPhiFunc.h"
+#include "include/pdgToMassInGeV.h"
 
 #include "fastjet/ClusterSequence.hh"
 
@@ -74,6 +75,12 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   //output file + other necessities
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
 
+  pdgToMassInGeV massMap;
+
+  UInt_t run_;
+  UInt_t lumi_;
+  ULong64_t evt_;
+
   Int_t hiBin;
   Double_t skCutVal;
   Double_t rhoEtaVal;
@@ -86,6 +93,9 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   jetClass jets;
 
   TTree* outTree_p = new TTree("rhoTree", "rhoTree");
+  outTree_p->Branch("run", &run_, "run/i");
+  outTree_p->Branch("lumi", &lumi_, "lumi/i");
+  outTree_p->Branch("evt", &evt_, "evt/i");
   outTree_p->Branch("hiBin", &hiBin, "hiBin/I");
   outTree_p->Branch("skCutVal", &skCutVal, "skCutVal/D");
   outTree_p->Branch("rhoEtaVal", &rhoEtaVal, "rhoEtaVal/D");
@@ -103,6 +113,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   outTree_p->Branch("refpt", jets.refpt_, "refpt[nref]/F");
   outTree_p->Branch("refphi", jets.refphi_, "refphi[nref]/F");
   outTree_p->Branch("refeta", jets.refeta_, "refeta[nref]/F");
+  outTree_p->Branch("refegfrac", jets.refegfrac_, "refegfrac[nref]/F");
   outTree_p->Branch("ref2pt", jets.ref2pt_, "ref2pt[nref]/F");
   outTree_p->Branch("ref2phi", jets.ref2phi_, "ref2phi[nref]/F");
   outTree_p->Branch("ref2eta", jets.ref2eta_, "ref2eta[nref]/F");
@@ -151,7 +162,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* genTree_p = (TTree*)inFile_p->Get("HiGenParticleAna/hi");
   TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
-  TTree* jetTree_p = (TTree*)inFile_p->Get("akPu3PFJetAnalyzer/t");
+  TTree* jetTree_p = (TTree*)inFile_p->Get("akPu4PFJetAnalyzer/t");
 
   genParticleClass particles;
 
@@ -178,8 +189,14 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   genTree_p->SetBranchAddress("sube", &(particles.sube_p));
 
   hiTree_p->SetBranchStatus("*", 0);
+  hiTree_p->SetBranchStatus("run", 1);
+  hiTree_p->SetBranchStatus("lumi", 1);
+  hiTree_p->SetBranchStatus("evt", 1);
   hiTree_p->SetBranchStatus("hiBin", 1);
 
+  hiTree_p->SetBranchAddress("run", &run_);
+  hiTree_p->SetBranchAddress("lumi", &lumi_);
+  hiTree_p->SetBranchAddress("evt", &evt_);
   hiTree_p->SetBranchAddress("hiBin", &hiBin);
 
   jetTree_p->SetBranchStatus("*", 0);
@@ -236,11 +253,15 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
     }
   
     for(int gI = 0; gI < (int)(particles.pt_p->size()); ++gI){
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 12) continue;
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 14) continue;
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 16) continue;
+
       if(TMath::Abs(particles.eta_p->at(gI)) >= absEtaMaxRC+.4) continue;
 
       if(particles.sube_p->at(gI) == 0){
 	TLorentzVector temp;
-	temp.SetPtEtaPhiM(particles.pt_p->at(gI), particles.eta_p->at(gI), particles.phi_p->at(gI), 0);
+	temp.SetPtEtaPhiM(particles.pt_p->at(gI), particles.eta_p->at(gI), particles.phi_p->at(gI), massMap.getMassFromID(particles.pdg_p->at(gI)));
 	fastjet::PseudoJet tempPJ(temp.Px(), temp.Py(), temp.Pz(), temp.E());
 	tempPJ.set_user_index(particles.pdg_p->at(gI));
 	constituents.push_back(tempPJ);
@@ -324,6 +345,10 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
     }
 
     for(int gI = 0; gI < (int)particles.pt_p->size(); ++gI){
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 12) continue;
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 14) continue;
+      if(TMath::Abs(particles.pdg_p->at(gI)) == 16) continue;
+
       for(unsigned int i = 0; i < etaRCVals.size(); ++i){
 	if(getDR(etaRCVals.at(i), phiRCVals.at(i), particles.eta_p->at(gI), particles.phi_p->at(gI)) < rcConeSize){
 	  sumRCVals.at(i) += particles.pt_p->at(gI);
@@ -336,7 +361,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
 	etaPastSK_.push_back(particles.eta_p->at(gI));
 
 	TLorentzVector temp;
-	temp.SetPtEtaPhiM(particles.pt_p->at(gI), particles.eta_p->at(gI), particles.phi_p->at(gI), 0);
+	temp.SetPtEtaPhiM(particles.pt_p->at(gI), particles.eta_p->at(gI), particles.phi_p->at(gI), massMap.getMassFromID(particles.pdg_p->at(gI)));
 	fastjet::PseudoJet tempPJ(temp.Px(), temp.Py(), temp.Pz(), temp.E());
 	tempPJ.set_user_index(particles.pdg_p->at(gI));
 	constituents.push_back(tempPJ);
@@ -394,8 +419,15 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
     skRhoVsSKCut_p->Fill(skRhoVal, skCutVal);
 
 
+    bool isUsed[ngen_];
+    for(int j = 0; j < ngen_; ++j){
+      isUsed[j] = false;
+    }
+
     jets.nref_ = 0;
     for(unsigned int i = 0; i < subJets.size(); ++i){
+      if(subJets.at(i).pt() < 10.) break;
+
       jets.jtpt_[jets.nref_] = subJets.at(i).pt();
       jets.jtphi_[jets.nref_] = subJets.at(i).phi_std();
       jets.jteta_[jets.nref_] = subJets.at(i).eta();
@@ -410,25 +442,28 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
       jets.refpt_[jets.nref_] = -999;
       jets.refphi_[jets.nref_] = -999;
       jets.refeta_[jets.nref_] = -999;
+      jets.refegfrac_[jets.nref_] = -999;
 
       jets.ref2pt_[jets.nref_] = -999;
       jets.ref2phi_[jets.nref_] = -999;
       jets.ref2eta_[jets.nref_] = -999;
-
+    
       for(unsigned int j = 0; j < genJets.size(); ++j){
 	if(getDR(subJets.at(i).eta(), subJets.at(i).phi_std(), genJets.at(j).eta(), genJets.at(j).phi_std()) < jetR){
 	  jets.refpt_[jets.nref_] = genJets.at(j).pt();
 	  jets.refphi_[jets.nref_] = genJets.at(j).phi_std();
 	  jets.refeta_[jets.nref_] = genJets.at(j).eta();
 
+	  std::vector<fastjet::PseudoJet> refConst = genJets.at(j).constituents();
+	  jets.refegfrac_[jets.nref_] = 0;
+	  
+	  for(unsigned int k = 0; k < refConst.size(); ++k){
+	    if(refConst.at(k).user_index() == 22 && refConst.at(k).pt()/jets.refpt_[jets.nref_] > jets.refegfrac_[jets.nref_]) jets.refegfrac_[jets.nref_] = refConst.at(k).pt()/jets.refpt_[jets.nref_];
+	  }
+
 	  genJets.erase(genJets.begin()+j);
 	  break;
 	}
-      }
-
-      bool isUsed[ngen_];
-      for(int j = 0; j < ngen_; ++j){
-	isUsed[j] = false;
       }
 
       for(int j = 0; j < ngen_; ++j){
