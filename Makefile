@@ -6,6 +6,7 @@ ifeq "$(GCCVERSION)" "1"
 endif
 
 ROOT=`root-config --cflags --glibs`
+FASTJET=`/net/hisrv0001/home/cfmcginn/Packages/FastJet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
 INCLUDE=-I $(PWD)
 MKDIR_BIN=mkdir -p $(PWD)/bin
 
@@ -15,7 +16,7 @@ mkdirBin:
 	$(MKDIR_BIN)
 
 runGenSK: src/runGenSK.C
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/runGenSK.exe src/runGenSK.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) $(FASTJET) -o bin/runGenSK.exe src/runGenSK.C
 
 clean:
 	rm -f *~

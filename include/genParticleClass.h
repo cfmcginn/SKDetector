@@ -10,6 +10,7 @@ class genParticleClass{
   std::vector<float>* phi_p=0;
   std::vector<int>* chg_p=0;
   std::vector<int>* pdg_p=0;
+  std::vector<int>* sube_p=0;
 };
 
 #endif
