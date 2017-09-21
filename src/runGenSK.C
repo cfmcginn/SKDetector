@@ -33,7 +33,7 @@ void prettyTH2(TH2* inHist_p)
   return;
 }
 
-void sortVects(std::vector<double>* sortV_p, std::vector<double>* v1_p, std::vector<double>* v2_p, std::vector<double>* v3_p)
+void sortVects(std::vector<double>* sortV_p, std::vector<double>* v1_p, std::vector<double>* v2_p)
 {
   for(unsigned int i = 0; i < sortV_p->size(); ++i){
     for(unsigned int j = i+1; j < sortV_p->size(); ++j){
@@ -42,17 +42,14 @@ void sortVects(std::vector<double>* sortV_p, std::vector<double>* v1_p, std::vec
 	double tempV = sortV_p->at(i);
 	double tempV1 = v1_p->at(i);
 	double tempV2 = v2_p->at(i);
-	double tempV3 = v3_p->at(i);
 
 	sortV_p->at(i) = sortV_p->at(j);
 	v1_p->at(i) = v1_p->at(j);
 	v2_p->at(i) = v2_p->at(j);
-	v3_p->at(i) = v3_p->at(j);
 
 	sortV_p->at(j) = tempV;
 	v1_p->at(j) = tempV1;
 	v2_p->at(j) = tempV2;
-	v3_p->at(j) = tempV3;
       }
     }
   }
@@ -83,12 +80,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
 
   Int_t hiBin;
   Double_t skCutVal;
-  Double_t rhoEtaVal;
-  Double_t rhoPhiVal;
   Double_t rhoVal;
-  Double_t skRhoEtaVal;
-  Double_t skRhoPhiVal;
-  Double_t skRhoVal;
 
   jetClass jets;
 
@@ -98,12 +90,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   outTree_p->Branch("evt", &evt_, "evt/i");
   outTree_p->Branch("hiBin", &hiBin, "hiBin/I");
   outTree_p->Branch("skCutVal", &skCutVal, "skCutVal/D");
-  outTree_p->Branch("rhoEtaVal", &rhoEtaVal, "rhoEtaVal/D");
-  outTree_p->Branch("rhoPhiVal", &rhoPhiVal, "rhoPhiVal/D");
   outTree_p->Branch("rhoVal", &rhoVal, "rhoVal/D");
-  outTree_p->Branch("skRhoEtaVal", &skRhoEtaVal, "skRhoEtaVal/D");
-  outTree_p->Branch("skRhoPhiVal", &skRhoPhiVal, "skRhoPhiVal/D");
-  outTree_p->Branch("skRhoVal", &skRhoVal, "skRhoVal/D");
 
   outTree_p->Branch("nref", &jets.nref_, "nref/I");
   outTree_p->Branch("jtpt", jets.jtpt_, "jtpt[nref]/F");
@@ -118,7 +105,6 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   outTree_p->Branch("ref2phi", jets.ref2phi_, "ref2phi[nref]/F");
   outTree_p->Branch("ref2eta", jets.ref2eta_, "ref2eta[nref]/F");
 
-
   //Fastjet defs
   const double jetR = 0.4;
   fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, jetR);
@@ -130,34 +116,9 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   const Double_t absEtaMaxRC = 2.;
   const Double_t rcConeSize = .4;
 
-  const Int_t nRhoBins = 5;
-  Double_t rhoBins[nRhoBins+1] = {0, 25, 50, 100, 200, 300};
-
   TH1F* rho_h = new TH1F("rho_h", ";#rho;Events", 300, 0, 300);
-  TH1F* skRho_h = new TH1F("skRho_h", ";#rho_{SK};Events", 100, 0, 100);
-
-  TH1F* skRho_RhoBin_h[nRhoBins];
-  TH1F* skRCRho_RhoBin_h[nRhoBins];
-  for(int i = 0; i < nRhoBins; ++i){
-    std::string rhoBinStr = "Rho" + std::to_string(int(rhoBins[i])) + "to" + std::to_string(int(rhoBins[i+1]));
-    std::string histName = "skRho_" + rhoBinStr + "_h";
-    std::string histName2 = "skRCRho_" + rhoBinStr + "_h";
-
-    skRho_RhoBin_h[i] = new TH1F(histName.c_str(), ";#rho_{SK};Events", 60, -10, 50);
-    skRCRho_RhoBin_h[i] = new TH1F(histName2.c_str(), ";#rho_{SK} (All RC);Events", 60, -10, 50);
-  }
-
   TH2F* rhoVsSKCut_p = new TH2F("rhoVsSKCut_h", ";#rho;SK Cut (GeV)", 100, 0, 300, 100, 0, 5);
   prettyTH2(rhoVsSKCut_p);
-
-  TH2F* skRhoVsSKCut_p = new TH2F("skRhoVsSKCut_h", ";#rho_{SK};SK Cut (GeV)", 100, 0, 300, 100, 0, 5);
-  prettyTH2(skRhoVsSKCut_p);
-
-  TH2F* rhoVsSKRho_p = new TH2F("rhoVsSKRho_h", ";#rho;#rho_{SK}", 100, 0, 300, 100, 0, 50);
-  prettyTH2(rhoVsSKRho_p);
-
-  TH2F* rcRhoVsRCSKRho_p = new TH2F("rcRhoVsRCSKRho_h", ";#rho (All RC);#rho_{SK} (All RC)", 100, 0, 300, 100, 0, 200);
-  prettyTH2(rcRhoVsRCSKRho_p);
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* genTree_p = (TTree*)inFile_p->Get("HiGenParticleAna/hi");
@@ -212,7 +173,7 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   jetTree_p->SetBranchAddress("geneta", geneta_);
   jetTree_p->SetBranchAddress("gensubid", gensubid_);
 
-  const Int_t nEntries = TMath::Min(100000, (Int_t)genTree_p->GetEntries());
+  const Int_t nEntries = TMath::Min(1000000, (Int_t)genTree_p->GetEntries());
 
   //Construct SK grid
   const Int_t nSKEtaBins = 12;
@@ -381,43 +342,10 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
     } 
 
 
-    for(int i = 0; i < (int)sumRCVals.size(); ++i){
-      rcRhoVsRCSKRho_p->Fill(sumRCVals.at(i)/(TMath::Pi()*rcConeSize*rcConeSize), sumRCSKVals.at(i)/(TMath::Pi()*rcConeSize*rcConeSize));
-    }
-
-    //    std::sort(std::begin(sumRCVals), std::end(sumRCVals));
-    //    std::sort(std::begin(sumRCSKVals), std::end(sumRCSKVals));
-
-    sortVects(&sumRCVals, &etaRCVals, &phiRCVals, &sumRCSKVals);    
+    sortVects(&sumRCVals, &etaRCVals, &phiRCVals);    
     rhoVal = (sumRCVals.at(sumRCVals.size()/2))/(TMath::Pi()*rcConeSize*rcConeSize);
-    rhoEtaVal = etaRCVals.at(sumRCVals.size()/2);
-    rhoPhiVal = phiRCVals.at(sumRCVals.size()/2);
-
-
-    Int_t rhoBinPos = -1;
-    for(int i = 0; i < nRhoBins; ++i){
-      if(rhoVal >= rhoBins[i] && rhoVal < rhoBins[i+1]){
-	rhoBinPos = i;
-	break;
-      }
-    }
-    if(rhoVal > rhoBins[nRhoBins]) rhoBinPos = nRhoBins-1;
-
-    for(int i = 0; i < (int)sumRCVals.size(); ++i){
-      skRCRho_RhoBin_h[rhoBinPos]->Fill(sumRCSKVals.at(i)/(TMath::Pi()*rcConeSize*rcConeSize));
-    }
-
     rho_h->Fill(rhoVal);
     rhoVsSKCut_p->Fill(rhoVal, skCutVal);
-
-    sortVects(&sumRCSKVals, &etaRCVals, &phiRCVals, &sumRCVals);    
-    skRhoVal = (sumRCSKVals.at(sumRCSKVals.size()/2))/(TMath::Pi()*rcConeSize*rcConeSize);
-    skRhoEtaVal = etaRCVals.at(sumRCVals.size()/2);
-    skRhoPhiVal = phiRCVals.at(sumRCVals.size()/2);
-
-    skRho_h->Fill(skRhoVal);
-    skRhoVsSKCut_p->Fill(skRhoVal, skCutVal);
-
 
     bool isUsed[ngen_];
     for(int j = 0; j < ngen_; ++j){
@@ -484,19 +412,6 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
     }
 
     outTree_p->Fill();
-
-    rhoVsSKRho_p->Fill(rhoVal, skRhoVal);
-    
-    if(rhoVal > 100.){
-      //      std::cout << "Check skCutVal (" << skCutVal << ", " << skVect.size() << ", " << skVect.at(0) << ", " << skVect.at(skVect.size()-1) << ")..." << std::endl;
-      for(int gI = 0; gI < (int)ptPastSK_.size(); ++gI){
-	//	std::cout << " " << ptPastSK_.at(gI) << ",";
-      }
-      //      std::cout << std::endl;
-      //      std::cout << std::endl;
-    }
-    
-    skRho_RhoBin_h[rhoBinPos]->Fill(skRhoVal);
   }
 
   std::cout << "Processing complete." << std::endl;
@@ -512,28 +427,8 @@ int runGenSK(const std::string inFileName, std::string outFileName = "")
   rho_h->Write("", TObject::kOverwrite);
   delete rho_h;
 
-  skRho_h->Write("", TObject::kOverwrite);
-  delete skRho_h;
-
-  for(int i = 0; i < nRhoBins; ++i){
-    skRho_RhoBin_h[i]->Write("", TObject::kOverwrite);
-    delete skRho_RhoBin_h[i];
-
-    skRCRho_RhoBin_h[i]->Write("", TObject::kOverwrite);
-    delete skRCRho_RhoBin_h[i];
-  }
-
   rhoVsSKCut_p->Write("", TObject::kOverwrite);
   delete rhoVsSKCut_p;
-
-  skRhoVsSKCut_p->Write("", TObject::kOverwrite);
-  delete skRhoVsSKCut_p;
-
-  rhoVsSKRho_p->Write("", TObject::kOverwrite);
-  delete rhoVsSKRho_p;
-
-  rcRhoVsRCSKRho_p->Write("", TObject::kOverwrite);
-  delete rcRhoVsRCSKRho_p;
 
   outFile_p->Close();
   delete outFile_p;
