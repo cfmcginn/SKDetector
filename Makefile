@@ -7,9 +7,9 @@ endif
 
 ROOT=`root-config --cflags --glibs`
 #for cgate usage
-FASTJET=`/net/hisrv0001/home/cfmcginn/Packages/FastJet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
+#FASTJET=`/net/hisrv0001/home/cfmcginn/Packages/FastJet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
 #for lxplus usage
-#FASTJET=`/afs/cern.ch/work/c/cmcginn/public/Fastjet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
+FASTJET=`/afs/cern.ch/work/c/cmcginn/public/Fastjet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
 INCLUDE=-I $(PWD)
 MKDIR_BIN=mkdir -p $(PWD)/bin
 
