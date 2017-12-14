@@ -4,8 +4,10 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 #include <map>
+#include "TLatex.h"
+#include "TStyle.h"
 
-void TMVAPlot::Loop(std::string title_cent, std::string name_cent)
+void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::string outpath="hists_tmva/")
 {
 //   In a ROOT session, you can do:
 //      root> .L TMVAPlot.C
@@ -32,7 +34,7 @@ void TMVAPlot::Loop(std::string title_cent, std::string name_cent)
 //by  b_branchname->GetEntry(ientry); //read only this branch
    if (fChain == 0) return;
 
-   TFile* outfile=new TFile("hists_tmva/out_cent0.root","RECREATE");
+   TFile* outfile=new TFile((outpath+"out"+name_cent+".root").c_str(),"RECREATE");
    
    // histograms
    //   std::string title_cent=", Cent 0-30";
@@ -90,36 +92,64 @@ void TMVAPlot::Loop(std::string title_cent, std::string name_cent)
 	     }
 	 }
      }
-     
+
+     gStyle->SetOptStat("e");
+
      TCanvas* c1=new TCanvas("c1", "c1", 800, 800);
+
+     TLatex* label=new TLatex();
+     label->SetNDC();
+     label->SetTextFont(43);
+     label->SetTextSize(18);
      
+     //     h_mEScale_all->SetStats(false);
+     //     h_EScale_all->SetStats(false);
+
      h_mEScale_all->Draw();
      h_EScale_all->Draw("*hist same");
      h_mEScale_all->Draw("same");
-     c1->SaveAs(("hists_tmva/"+(std::string)h_EScale_all->GetName()+".png").c_str());
+
+     label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale_all->GetMean())).c_str());
+     label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale_all->GetStdDev())).c_str());
+     label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale_all->GetMean())).c_str());
+     label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale_all->GetStdDev())).c_str());
+     c1->SaveAs((outpath+(std::string)h_EScale_all->GetName()+".png").c_str());
      
+     gStyle->SetOptStat("emr");
      h_mCorr_all->Draw();
-     c1->SaveAs(("hists_tmva/"+(std::string)h_mCorr_all->GetName()+".png").c_str());
+     c1->SaveAs((outpath+(std::string)h_mCorr_all->GetName()+".png").c_str());
      
      for (int i=0;i<nEtaCuts;i++)
        {
 	 TH1F* h_mEScale=hist_map_mEScale[names_eta[i]];
 	 TH1F* h_EScale=hist_map_EScale[names_eta[i]];
 	 TH1F* h_mCorr=hist_map_mCorr[names_eta[i]];
-	 
+
+	 //	 h_mEScale->SetStats(false);
+	 //	 h_EScale->SetStats(false);
+
+	 gStyle->SetOptStat("e");
+
 	 h_mEScale->Draw();
 	 h_EScale->Draw("*hist same");
 	 h_mEScale->Draw("same");
-	 c1->SaveAs(("hists_tmva/"+(std::string)h_EScale->GetName()+".png").c_str());
+
+	 label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale->GetMean())).c_str());
+	 label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale->GetStdDev())).c_str());
+	 label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale->GetMean())).c_str());
+	 label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale->GetStdDev())).c_str());
+	 c1->SaveAs((outpath+(std::string)h_EScale->GetName()+".png").c_str());
 	 
+	 gStyle->SetOptStat("emr");
 	 h_mCorr->Draw();
-	 c1->SaveAs(("hists_tmva/"+(std::string)h_mCorr->GetName()+".png").c_str());
+	 c1->SaveAs((outpath+(std::string)h_mCorr->GetName()+".png").c_str());
        }
      /*   for (std::string name : plotList)
 	  {
 	  hist_map[name]->Draw();
 	  c1->SaveAs(("hists_tmva/"+(std::string)hist_map[name]->GetName()+"_cent70.png").c_str());
 	  }*/
+     delete c1;
    }
    outfile->Write();
    outfile->Close();

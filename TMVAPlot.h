@@ -53,7 +53,7 @@ public :
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual void     Loop(std::string title_cent, std::string name_cent);
+   virtual void     Loop(std::string title_cent, std::string name_cent, std::string outpath);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };

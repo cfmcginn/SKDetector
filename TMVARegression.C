@@ -15,7 +15,7 @@
 #include "TMVA/TMVARegGui.h"
 #include "TMVA/DNN/Architectures/Cpu/Blas.h"
 using namespace TMVA;
-void TMVARegression( std::string cut, TString myMethodList = "" )
+TString TMVARegression( std::string cut, std::string name_cent, const int n_input, TString myMethodList = "" )
 {
   // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
   // if you use your private .rootrc, or run from a different directory, please copy the
@@ -67,7 +67,7 @@ void TMVARegression( std::string cut, TString myMethodList = "" )
 	std::cout << "Method \"" << regMethod << "\" not known in TMVA under this name. Choose among the following:" << std::endl;
 	for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++) std::cout << it->first << " ";
 	std::cout << std::endl;
-	return;
+	return "";
       }
       Use[regMethod] = 1;
     }
@@ -75,7 +75,7 @@ void TMVARegression( std::string cut, TString myMethodList = "" )
   // --------------------------------------------------------------------------------------------------
   // Here the preparation phase begins
   // Create a new root output file
-  TString outfileName( "/afs/cern.ch/work/s/skanaski/TMVAReg.root" );
+  TString outfileName( "/afs/cern.ch/work/s/skanaski/TMVAReg"+name_cent+".root" );
   TFile* outputFile = TFile::Open( outfileName, "RECREATE" );
   // Create the factory object. Later you can choose the methods
   // whose performance you'd like to investigate. The factory will
@@ -106,7 +106,8 @@ void TMVARegression( std::string cut, TString myMethodList = "" )
   dataloader->AddVariable( "jtpt", "Jet pt", "GeV", 'F' );
   dataloader->AddVariable( "jteta", "Jet eta", "", 'F' );
   dataloader->AddVariable( "jtphi", "Jet phi", "", 'F' );
-  dataloader->AddVariable( "hiBin/2", "Centrality", "", 'F' );
+  dataloader->AddVariable( "hiBin", "Centrality", "", 'F' );
+  dataloader->AddVariable( "vz", "Vertex displacement", "", 'F' );
   // You can add so-called "Spectator variables", which are not used in the MVA training,
   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
   // input variables, the response values of all trained MVAs, and the spectator variables
@@ -119,7 +120,7 @@ void TMVARegression( std::string cut, TString myMethodList = "" )
   // BUT: this is currently ONLY implemented for MLP
   // Read training and test data (see TMVAClassification for reading ASCII files)
   // load the signal and background event samples from ROOT trees
-  const int n_input=16;
+  //  const int n_input=25;
   for (int i=1;i<=n_input;i++)
     {
       TFile *input(0);
@@ -267,6 +268,7 @@ void TMVARegression( std::string cut, TString myMethodList = "" )
   delete dataloader;
   // Launch the GUI for the root macros
   //  if (!gROOT->IsBatch()) TMVA::TMVARegGui( outfileName );
+  return outfileName;
 }
 /*int main( int argc, char** argv )
 {
