@@ -55,14 +55,15 @@ int treeFormat(const std::string inFileName)
   std::cout << std::endl;
 
   const Int_t nEtaTow = 2*towEtaLow.size();
-  Double_t etaPhiSum_[nEtaTow*nPhiTow];
+  const Int_t nEtaPhiTow = nEtaTow*nPhiTow;
+  Float_t etaPhiSum_[nEtaPhiTow];
 
   Int_t hiBin_;
   Float_t evtPlanePhi_;
 
   learnTree_p->Branch("hiBin", &hiBin_, "hiBin/I");
   learnTree_p->Branch("evtPlanePhi", &evtPlanePhi_, "evtPlanePhi/F");
-  learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaTow*nPhiTow) +"]/F").c_str());
+  learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
@@ -105,7 +106,7 @@ int treeFormat(const std::string inFileName)
     evtPlanePhi_ = hiEvtPlanes_[8];
 
 
-    for(Int_t i = 0; i < nEtaTow*nPhiTow; ++i){
+    for(Int_t i = 0; i < nEtaPhiTow; ++i){
       etaPhiSum_[i] = 0.0;
     }
 
