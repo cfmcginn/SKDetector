@@ -58,9 +58,14 @@ int treeFormat(const std::string inFileName)
   const Int_t nEtaPhiTow = nEtaTow*nPhiTow;
   Float_t etaPhiSum_[nEtaPhiTow];
 
+  UInt_t run_, lumi_;
+  ULong64_t evt_;
   Int_t hiBin_;
   Float_t evtPlanePhi_;
 
+  learnTree_p->Branch("run", &run_, "run/i");
+  learnTree_p->Branch("lumi", &lumi_, "lumi/i");
+  learnTree_p->Branch("evt", &evt_, "evt/l");
   learnTree_p->Branch("hiBin", &hiBin_, "hiBin/I");
   learnTree_p->Branch("evtPlanePhi", &evtPlanePhi_, "evtPlanePhi/F");
   learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
@@ -87,9 +92,15 @@ int treeFormat(const std::string inFileName)
   pfTree_p->SetBranchAddress("pfEta", &pfEta_p);
 
   hiTree_p->SetBranchStatus("*", 0);
+  hiTree_p->SetBranchStatus("run", 1);
+  hiTree_p->SetBranchStatus("lumi", 1);
+  hiTree_p->SetBranchStatus("evt", 1);
   hiTree_p->SetBranchStatus("hiNevtPlane", 1);
   hiTree_p->SetBranchStatus("hiEvtPlanes", 1);
 
+  hiTree_p->SetBranchAddress("run", &run_);
+  hiTree_p->SetBranchAddress("lumi", &lumi_);
+  hiTree_p->SetBranchAddress("evt", &evt_);
   hiTree_p->SetBranchAddress("hiNevtPlane", &hiNevtPlane_);
   hiTree_p->SetBranchAddress("hiEvtPlanes", hiEvtPlanes_);
 
@@ -105,7 +116,7 @@ int treeFormat(const std::string inFileName)
     if(hiNevtPlane_ == 0) continue;
     evtPlanePhi_ = hiEvtPlanes_[8];
 
-
+  
     for(Int_t i = 0; i < nEtaPhiTow; ++i){
       etaPhiSum_[i] = 0.0;
     }
