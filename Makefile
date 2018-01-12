@@ -13,13 +13,16 @@ FASTJET=`/afs/cern.ch/work/c/cmcginn/public/Fastjet/fastjet-install/bin/fastjet-
 INCLUDE=-I $(PWD)
 MKDIR_BIN=mkdir -p $(PWD)/bin
 
-all: mkdirBin runGenSK
+all: mkdirBin runGenSK treeFormat
 
 mkdirBin:
 	$(MKDIR_BIN)
 
 runGenSK: src/runGenSK.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) $(FASTJET) -o bin/runGenSK.exe src/runGenSK.C
+
+treeFormat: src/treeFormat.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) $(FASTJET) -o bin/treeFormat.exe src/treeFormat.C
 
 clean:
 	rm -f *~
