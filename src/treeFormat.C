@@ -32,7 +32,6 @@ int treeFormat(const std::string inFileName)
     towPhiHi.push_back(phiTow[pI+1]);
   }
 
-
   std::cout << etaTowBounds.size() << ", " << etaTowNPhi.size() << std::endl;
 
   for(unsigned int tI = 0; tI < etaTowNPhi.size(); ++tI){
@@ -57,6 +56,8 @@ int treeFormat(const std::string inFileName)
   const Int_t nEtaTow = 2*towEtaLow.size();
   const Int_t nEtaPhiTow = nEtaTow*nPhiTow;
   Float_t etaPhiSum_[nEtaPhiTow];
+  Float_t etaCent_[nEtaPhiTow];
+  Float_t phiCent_[nEtaPhiTow];
 
   UInt_t run_, lumi_;
   ULong64_t evt_;
@@ -69,6 +70,8 @@ int treeFormat(const std::string inFileName)
   learnTree_p->Branch("hiBin", &hiBin_, "hiBin/I");
   learnTree_p->Branch("evtPlanePhi", &evtPlanePhi_, "evtPlanePhi/F");
   learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
+  learnTree_p->Branch("etaCent", etaCent_, ("etaCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
+  learnTree_p->Branch("phiCent", phiCent_, ("phiCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
@@ -119,6 +122,8 @@ int treeFormat(const std::string inFileName)
   
     for(Int_t i = 0; i < nEtaPhiTow; ++i){
       etaPhiSum_[i] = 0.0;
+      etaCent_[i] = -999.;
+      phiCent_[i] = -999.;
     }
 
     for(unsigned int pI = 0; pI < pfPt_p->size(); ++pI){
@@ -126,7 +131,7 @@ int treeFormat(const std::string inFileName)
       Int_t phiPos = -1;
 
       for(unsigned int eI = 0; eI < towEtaLow.size(); ++eI){
-	if(pfEta_p->at(eI) >= towEtaLow.at(eI) && pfEta_p->at(eI) < towEtaHi.at(eI)){
+	if(pfEta_p->at(pI) >= towEtaLow.at(eI) && pfEta_p->at(pI) < towEtaHi.at(eI)){
 	  etaPos = eI;
 	  break;
 	}
@@ -135,14 +140,16 @@ int treeFormat(const std::string inFileName)
       if(etaPos == -1) continue;
 
       for(unsigned int eI = 0; eI < towPhiLow.size(); ++eI){
-	if(pfPhi_p->at(eI) >= towPhiLow.at(eI) && pfPhi_p->at(eI) < towPhiHi.at(eI)){
+	if(pfPhi_p->at(pI) >= towPhiLow.at(eI) && pfPhi_p->at(pI) < towPhiHi.at(eI)){
 	  phiPos = eI;
 	  break;
 	}
       }
       if(phiPos == -1 && pfPhi_p->at(pI) == towPhiHi.at(towPhiHi.size()-1)) phiPos = towPhiHi.size()-1;
-      
+
       etaPhiSum_[etaPos*nPhiTow + phiPos] += pfPt_p->at(pI);
+      etaCent_[etaPos*nPhiTow + phiPos] = (towEtaLow.at(etaPos) + towEtaHi.at(etaPos))/2.;
+      phiCent_[etaPos*nPhiTow + phiPos] = (towPhiLow.at(phiPos) + towPhiHi.at(phiPos))/2.;
     }
 
     learnTree_p->Fill();
