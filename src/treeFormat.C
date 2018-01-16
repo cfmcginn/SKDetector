@@ -35,7 +35,9 @@ int treeFormat(const std::string inFileName)
   std::cout << etaTowBounds.size() << ", " << etaTowNPhi.size() << std::endl;
 
   for(unsigned int tI = 0; tI < etaTowNPhi.size(); ++tI){
-    if(etaTowNPhi.at(tI) != nPhiTow) continue;
+    if(etaTowNPhi.at(tI) > 36) continue;
+
+    if(TMath::Abs(etaTowBounds.at(tI)) <= 3 && TMath::Abs(etaTowBounds.at(tI+1)) <= 3) continue;
 
     towEtaLow.push_back(etaTowBounds.at(tI));
     towEtaHi.push_back(etaTowBounds.at(tI+1));
@@ -53,9 +55,11 @@ int treeFormat(const std::string inFileName)
   }
   std::cout << std::endl;
 
-  const Int_t nEtaTow = 2*towEtaLow.size();
+  const Int_t nEtaTow = towEtaLow.size();
   const Int_t nEtaPhiTow = nEtaTow*nPhiTow;
+  const Int_t nEtaPhiTowCollapse = 2*nPhiTow;
   Float_t etaPhiSum_[nEtaPhiTow];
+  Float_t etaPhiSum_Collapse_[nEtaPhiTowCollapse];
   Float_t etaCent_[nEtaPhiTow];
   Float_t phiCent_[nEtaPhiTow];
 
@@ -70,6 +74,9 @@ int treeFormat(const std::string inFileName)
   learnTree_p->Branch("hiBin", &hiBin_, "hiBin/I");
   learnTree_p->Branch("evtPlanePhi", &evtPlanePhi_, "evtPlanePhi/F");
   learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
+  for(Int_t bI = 0; bI < nEtaPhiTowCollapse; ++bI){
+    learnTree_p->Branch(("etaPhiSum_Collapse" + std::to_string(bI)).c_str(), &(etaPhiSum_Collapse_[bI]), ("etaPhiSum_Collapse" + std::to_string(bI) + "/F").c_str());
+  }
   learnTree_p->Branch("etaCent", etaCent_, ("etaCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
   learnTree_p->Branch("phiCent", phiCent_, ("phiCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
 
@@ -98,12 +105,14 @@ int treeFormat(const std::string inFileName)
   hiTree_p->SetBranchStatus("run", 1);
   hiTree_p->SetBranchStatus("lumi", 1);
   hiTree_p->SetBranchStatus("evt", 1);
+  hiTree_p->SetBranchStatus("hiBin", 1);
   hiTree_p->SetBranchStatus("hiNevtPlane", 1);
   hiTree_p->SetBranchStatus("hiEvtPlanes", 1);
 
   hiTree_p->SetBranchAddress("run", &run_);
   hiTree_p->SetBranchAddress("lumi", &lumi_);
   hiTree_p->SetBranchAddress("evt", &evt_);
+  hiTree_p->SetBranchAddress("hiBin", &hiBin_);
   hiTree_p->SetBranchAddress("hiNevtPlane", &hiNevtPlane_);
   hiTree_p->SetBranchAddress("hiEvtPlanes", hiEvtPlanes_);
 
@@ -126,6 +135,11 @@ int treeFormat(const std::string inFileName)
       phiCent_[i] = -999.;
     }
 
+
+    for(Int_t i = 0; i < nEtaPhiTowCollapse; ++i){
+      etaPhiSum_Collapse_[i] = 0.0;
+    }
+
     for(unsigned int pI = 0; pI < pfPt_p->size(); ++pI){
       Int_t etaPos = -1;
       Int_t phiPos = -1;
@@ -139,6 +153,9 @@ int treeFormat(const std::string inFileName)
 
       if(etaPos == -1) continue;
 
+      Int_t etaPosCollapse = 0;
+      if(pfEta_p->at(pI) > 0) etaPosCollapse = 1;
+
       for(unsigned int eI = 0; eI < towPhiLow.size(); ++eI){
 	if(pfPhi_p->at(pI) >= towPhiLow.at(eI) && pfPhi_p->at(pI) < towPhiHi.at(eI)){
 	  phiPos = eI;
@@ -148,6 +165,8 @@ int treeFormat(const std::string inFileName)
       if(phiPos == -1 && pfPhi_p->at(pI) == towPhiHi.at(towPhiHi.size()-1)) phiPos = towPhiHi.size()-1;
 
       etaPhiSum_[etaPos*nPhiTow + phiPos] += pfPt_p->at(pI);
+      etaPhiSum_Collapse_[etaPosCollapse*nPhiTow + phiPos] += pfPt_p->at(pI);
+
       etaCent_[etaPos*nPhiTow + phiPos] = (towEtaLow.at(etaPos) + towEtaHi.at(etaPos))/2.;
       phiCent_[etaPos*nPhiTow + phiPos] = (towPhiLow.at(phiPos) + towPhiHi.at(phiPos))/2.;
     }

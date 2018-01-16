@@ -116,8 +116,10 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   //  dataloader->AddVariable( "phoSCPhiWidth", "Super Cluster Phi Width", "", 'F' );
   //  dataloader->AddVariable( "hiBin/2", "Centrality", "", 'F' );
 
-  dataloader->AddVariable("hiBin", "Centrality", "", 'F');
-  dataloader->AddVariable("etaPhiSum", "Centrality", "", 'F');
+  dataloader->AddVariable("hiBin", "Centrality", "", 'I');
+  for(Int_t bI = 0; bI < 36; ++bI){
+    dataloader->AddVariable(("etaPhiSum_Collapse" + std::to_string(bI)).c_str(), "", "", 'F');
+  }
 
   // You can add so-called "Spectator variables", which are not used in the MVA training,
   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
@@ -132,8 +134,11 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   TTree* learnTree_p = (TTree*)inFile_p->Get("learnTree");
   dataloader->AddRegressionTree(learnTree_p, 1.0);
 
+
+  std::cout << "DO prep.." << std::endl;
   // tell the DataLoader to use all remaining events in the trees after training for testing:
-  dataloader->PrepareTrainingAndTestTree("", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
+  dataloader->PrepareTrainingAndTestTree("hiBin < 140", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
+  std::cout << "End prep.." << std::endl;
 
   //
   //     dataloader->PrepareTrainingAndTestTree( mycut,
@@ -184,7 +189,10 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   if (Use["MLP"])
     factory->BookMethod( dataloader,  TMVA::Types::kMLP, "MLP", "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator" );
 
+  std::cout << "starting DNN" << std::endl;
+
   if (Use["DNN_CPU"]) {
+    std::cout << "do DNN" << std::endl;
     /*
           TString layoutString ("Layout=TANH|(N+100)*2,LINEAR");
           TString layoutString ("Layout=SOFTSIGN|100,SOFTSIGN|50,SOFTSIGN|20,LINEAR");
@@ -206,7 +214,8 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
     TString training3("LearningRate=1e-6,Momentum=0.1,Repetitions=1,ConvergenceSteps=500,BatchSize=100,"
 		      "TestRepetitions=7,WeightDecay=0.0001,Regularization=NONE");
     TString trainingStrategyString("TrainingStrategy=");
-    trainingStrategyString += training0 + "|" + training1 + "|" + training2 + "|" + training3;
+    //    trainingStrategyString += training0 + "|" + training1 + "|" + training2 + "|" + training3;
+    trainingStrategyString += training0;
     //       TString trainingStrategyString
     //       ("TrainingStrategy=LearningRate=1e-1,Momentum=0.3,Repetitions=3,ConvergenceSteps=20,BatchSize=30,TestRepetitions=7,WeightDecay=0.0,L1=false,DropFraction=0.0,DropRepetitions=5");
     TString nnOptions(
@@ -216,7 +225,10 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
     nnOptions.Append(layoutString);
     nnOptions.Append(":");
     nnOptions.Append(trainingStrategyString);
+    std::cout << "book DNN" << std::endl;
     factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", nnOptions); // NN
+
+    std::cout << "end DNN" << std::endl;
   }
 
   // Support Vector Machine
@@ -229,6 +241,8 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   if (Use["BDTG"])
     factory->BookMethod( dataloader,  TMVA::Types::kBDT, "BDTG",
 			 "!H:!V:NTrees=2000::BoostType=Grad:Shrinkage=0.1:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=3:MaxDepth=4" );
+
+  std::cout << "Begin training.." << std::endl;
   // --------------------------------------------------------------------------------------------------
   // Now you can tell the factory to train, test, and evaluate the MVAs
   // Train MVAs using the set of training events
