@@ -8,7 +8,7 @@
 #include "include/pseudoTowerGeometry.h"
 #include "include/getLinBins.h"
 
-int treeFormat(const std::string inFileName)
+int treeFormat(const std::string inFileName, const bool doJetStyle = false)
 {
   TDatime* date = new TDatime();
   TFile* outFile_p = new TFile(("learn_" + std::to_string(date->GetDate()) + ".root").c_str(), "RECREATE");
@@ -65,12 +65,20 @@ int treeFormat(const std::string inFileName)
 
   UInt_t run_, lumi_;
   ULong64_t evt_;
+  Float_t vz_;
   Int_t hiBin_;
   Float_t evtPlanePhi_;
+
+  Float_t jtptOut_ = -999;
+  Float_t rawptOut_ = -999;
+  Float_t jtphiOut_ = -999;
+  Float_t jtetaOut_ = -999;
+  Float_t refptOut_ = -999;
 
   learnTree_p->Branch("run", &run_, "run/i");
   learnTree_p->Branch("lumi", &lumi_, "lumi/i");
   learnTree_p->Branch("evt", &evt_, "evt/l");
+  learnTree_p->Branch("vz", &vz_, "vz/F");
   learnTree_p->Branch("hiBin", &hiBin_, "hiBin/I");
   learnTree_p->Branch("evtPlanePhi", &evtPlanePhi_, "evtPlanePhi/F");
   learnTree_p->Branch("etaPhiSum", etaPhiSum_, ("etaPhiSum[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
@@ -80,9 +88,19 @@ int treeFormat(const std::string inFileName)
   learnTree_p->Branch("etaCent", etaCent_, ("etaCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
   learnTree_p->Branch("phiCent", phiCent_, ("phiCent[" + std::to_string(nEtaPhiTow) +"]/F").c_str());
 
+  if(doJetStyle){
+    learnTree_p->Branch("jtpt", &jtptOut_, "jtpt/F");
+    learnTree_p->Branch("rawpt", &rawptOut_, "rawpt/F");
+    learnTree_p->Branch("jtphi", &jtphiOut_, "jtphi/F");
+    learnTree_p->Branch("jteta", &jtetaOut_, "jteta/F");
+    learnTree_p->Branch("refpt", &refptOut_, "refpt/F");
+  }
+
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
   TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
+  TTree* jetTree_p = 0;
+  if(doJetStyle) jetTree_p = (TTree*)inFile_p->Get("akPu4PFJetAnalyzer/t");
 
   std::vector<float>* pfPt_p=0;
   std::vector<float>* pfEta_p=0;
@@ -91,6 +109,14 @@ int treeFormat(const std::string inFileName)
   const Int_t hiNevtPlaneMax_ = 29;
   Int_t hiNevtPlane_;
   Float_t hiEvtPlanes_[hiNevtPlaneMax_];
+
+  const Int_t nMaxJet = 500;
+  Int_t nref_;
+  Float_t jtpt_[nMaxJet];
+  Float_t rawpt_[nMaxJet];
+  Float_t jteta_[nMaxJet];
+  Float_t jtphi_[nMaxJet];
+  Float_t refpt_[nMaxJet];
 
   pfTree_p->SetBranchStatus("*", 0);
   pfTree_p->SetBranchStatus("pfPt", 1);
@@ -116,6 +142,23 @@ int treeFormat(const std::string inFileName)
   hiTree_p->SetBranchAddress("hiNevtPlane", &hiNevtPlane_);
   hiTree_p->SetBranchAddress("hiEvtPlanes", hiEvtPlanes_);
 
+  if(doJetStyle){
+    jetTree_p->SetBranchStatus("*", 0);
+    jetTree_p->SetBranchStatus("nref", 1);
+    jetTree_p->SetBranchStatus("jtpt", 1);
+    jetTree_p->SetBranchStatus("rawpt", 1);
+    jetTree_p->SetBranchStatus("jtphi", 1);
+    jetTree_p->SetBranchStatus("jteta", 1);
+    jetTree_p->SetBranchStatus("refpt", 1);
+
+    jetTree_p->SetBranchAddress("nref", &nref_);
+    jetTree_p->SetBranchAddress("jtpt", jtpt_);
+    jetTree_p->SetBranchAddress("rawpt", rawpt_);
+    jetTree_p->SetBranchAddress("jtphi", jtphi_);
+    jetTree_p->SetBranchAddress("jteta", jteta_);
+    jetTree_p->SetBranchAddress("refpt", refpt_);
+  }
+
   const Int_t nEntries = pfTree_p->GetEntries();
 
   std::cout << "Processing..." << std::endl;
@@ -124,10 +167,10 @@ int treeFormat(const std::string inFileName)
 
     pfTree_p->GetEntry(entry);
     hiTree_p->GetEntry(entry);
+    if(doJetStyle) jetTree_p->GetEntry(entry);
 
     if(hiNevtPlane_ == 0) continue;
     evtPlanePhi_ = hiEvtPlanes_[8];
-
   
     for(Int_t i = 0; i < nEtaPhiTow; ++i){
       etaPhiSum_[i] = 0.0;
@@ -135,7 +178,12 @@ int treeFormat(const std::string inFileName)
       phiCent_[i] = -999.;
     }
 
-
+    jtptOut_ = -999;
+    rawptOut_ = -999;
+    jtphiOut_ = -999;
+    jtetaOut_ = -999;
+    refptOut_ = -999;
+    
     for(Int_t i = 0; i < nEtaPhiTowCollapse; ++i){
       etaPhiSum_Collapse_[i] = 0.0;
     }
@@ -171,13 +219,22 @@ int treeFormat(const std::string inFileName)
       phiCent_[etaPos*nPhiTow + phiPos] = (towPhiLow.at(phiPos) + towPhiHi.at(phiPos))/2.;
     }
 
-    learnTree_p->Fill();
 
-    if(TMath::Abs(evtPlanePhi_) <= 1) continue;
-    if(evtPlanePhi_ < -1.) evtPlanePhi_ += TMath::Pi();
-    else if(evtPlanePhi_ > 1.) evtPlanePhi_ -= TMath::Pi();
+    if(!doJetStyle) learnTree_p->Fill();
+    else{
+      for(Int_t jI = 0; jI < nref_; ++jI){
+	if(refpt_[jI] < 30.) continue;
+	if(TMath::Abs(jteta_[jI]) > 2.) continue;
 
-    learnTree_p->Fill();
+	jtptOut_ = jtpt_[jI];
+	rawptOut_ = rawpt_[jI];
+	jtphiOut_ = jtphi_[jI];
+	jtetaOut_ = jteta_[jI];
+	refptOut_ = refpt_[jI];
+
+	learnTree_p->Fill();
+      }
+    }
   }
 
   inFile_p->Close();
@@ -198,12 +255,13 @@ int treeFormat(const std::string inFileName)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2){
-    std::cout << "Usage: ./treeFormat.exe <inFileName>" << std::endl;
+  if(argc != 2 && argc != 3){
+    std::cout << "Usage: ./treeFormat.exe <inFileName> <doJetStyle-optional>" << std::endl;
     return 1;
   }
 
   int retVal = 0;
-  retVal += treeFormat(argv[1]);
+  if(argc == 2) retVal += treeFormat(argv[1]);
+  else if(argc == 3) retVal += treeFormat(argv[1], std::stoi(argv[2]));
   return retVal;
 }
