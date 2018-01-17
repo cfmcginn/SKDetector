@@ -15,7 +15,7 @@
 #include "TMVA/TMVARegGui.h"
 #include "TMVA/DNN/Architectures/Cpu/Blas.h"
 using namespace TMVA;
-TString TMVARegression( std::string cut, std::string name_cent, const int n_input, TString myMethodList = "" )
+TString TMVARegression( std::string cut, std::string name_cent, const int n_input = 25, TString myMethodList = "" )
 {
   // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
   // if you use your private .rootrc, or run from a different directory, please copy the
@@ -108,6 +108,8 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
   dataloader->AddVariable( "jtphi", "Jet phi", "", 'F' );
   dataloader->AddVariable( "hiBin", "Centrality", "", 'F' );
   dataloader->AddVariable( "vz", "Vertex displacement", "", 'F' );
+  dataloader->AddVariable( "hiEvtPlanes[8]", "Event Plane Phi", "", 'F' );
+  //  dataloader->AddVariable( "hiEvtPlanes[8]", "Event Plane", "", 'F' );
   // You can add so-called "Spectator variables", which are not used in the MVA training,
   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
   // input variables, the response values of all trained MVAs, and the spectator variables
@@ -121,7 +123,7 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
   // Read training and test data (see TMVAClassification for reading ASCII files)
   // load the signal and background event samples from ROOT trees
   //  const int n_input=25;
-  for (int i=1;i<=n_input;i++)
+/*  for (int i=1;i<=n_input;i++)
     {
       TFile *input(0);
       //  TString fname = "/afs/cern.ch/work/s/skanaski/jetstuff/HiForestAOD_101_eta11_phi18.root";
@@ -151,7 +153,34 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
       // This would set individual event weights (the variables defined in the
       // expression need to exist in the original TTree)
       //  dataloader->SetWeightExpression( "var1", "Regression" );
-    }
+      }*/
+  TFile *input(0);
+  TString fname = "/afs/cern.ch/work/s/skanaski/jetstuff/merge.root";
+  if (!gSystem->AccessPathName( fname )) {
+    input = TFile::Open( fname ); // check if file in local directory exists
+  }
+  else {
+    TFile::SetCacheFileDir(".");
+    input = TFile::Open("http://root.cern.ch/files/tmva_reg_example.root", "CACHEREAD"); // if not: download from ROOT server
+  }
+  if (!input) {
+    std::cout << "ERROR: could not open data file" << std::endl;
+    exit(1);
+  }
+  std::cout << "--- TMVARegression           : Using input file: " << input->GetName() << std::endl;
+  // Register the regression tree
+  //  TTree *regTree = (TTree*)input->Get("rhoTree");
+  TTree* regTree = (TTree*)input->Get("akPu4PFJetAnalyzer/t");
+  TTree *centTree=(TTree*)input->Get("hiEvtAnalyzer/HiTree");
+  regTree->AddFriend(centTree);
+  // global event weights per tree (see below for setting event-wise weights)
+  Double_t regWeight  = 1.0;
+  // You can add an arbitrary number of regression trees
+  dataloader->AddRegressionTree( regTree, regWeight );
+  //  dataloader->AddRegressionTree( centTree, 1.0 );
+  // This would set individual event weights (the variables defined in the
+  // expression need to exist in the original TTree)
+  //  dataloader->SetWeightExpression( "var1", "Regression" );
   // Apply additional cuts on the signal and background samples (can be different)
   TCut mycut = cut.c_str(); //"hiBin<60 && abs(jteta)<2 && refpt>30 && refpt<50"; // for example: TCut mycut = "abs(var1)<0.5 && abs(var2-0.5)<1";
   // tell the DataLoader to use all remaining events in the trees after training for testing:

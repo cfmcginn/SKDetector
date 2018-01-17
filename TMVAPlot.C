@@ -47,9 +47,9 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
    std::string names_eta[]={"_eta0","_eta5","_eta10"};
    
    const int nPtCuts=3;
-   float ptCuts[]={30,50,70,100};
-   std::string titles_pt[]={", pt 30-50",", pt 50-70", ", pt 70-100"};
-   std::string names_pt[]={"_pt30","_pt50","_pt70"};
+   float ptCuts[]={40,50,70,100};
+   std::string titles_pt[]={", pt 40-50",", pt 50-70", ", pt 70-100"};
+   std::string names_pt[]={"_pt40","_pt50","_pt70"};
    
    for (int j=0;j<nPtCuts;j++){
      TH1F* h_mEScale_all=new TH1F(("h_mEScale"+name_cent+names_pt[j]).c_str(), ("Jet EScale"+title_cent+titles_pt[j]+", all eta;reco/gen").c_str(),100,0,2);
