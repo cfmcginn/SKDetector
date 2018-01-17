@@ -117,7 +117,7 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   //  dataloader->AddVariable( "hiBin/2", "Centrality", "", 'F' );
 
   dataloader->AddVariable("hiBin", "Centrality", "", 'I');
-  for(Int_t bI = 0; bI < 36; ++bI){
+  for(Int_t bI = 0; bI < 72; ++bI){
     dataloader->AddVariable(("etaPhiSum_Collapse" + std::to_string(bI)).c_str(), "", "", 'F');
   }
 
@@ -137,7 +137,7 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
 
   std::cout << "DO prep.." << std::endl;
   // tell the DataLoader to use all remaining events in the trees after training for testing:
-  dataloader->PrepareTrainingAndTestTree("hiBin < 140", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
+  dataloader->PrepareTrainingAndTestTree("hiBin >= 40 && hiBin < 60", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
   std::cout << "End prep.." << std::endl;
 
   //
@@ -214,8 +214,8 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
     TString training3("LearningRate=1e-6,Momentum=0.1,Repetitions=1,ConvergenceSteps=500,BatchSize=100,"
 		      "TestRepetitions=7,WeightDecay=0.0001,Regularization=NONE");
     TString trainingStrategyString("TrainingStrategy=");
-    //    trainingStrategyString += training0 + "|" + training1 + "|" + training2 + "|" + training3;
-    trainingStrategyString += training0;
+    trainingStrategyString += training0 + "|" + training1 + "|" + training2 + "|" + training3;
+    //    trainingStrategyString += training0;
     //       TString trainingStrategyString
     //       ("TrainingStrategy=LearningRate=1e-1,Momentum=0.3,Repetitions=3,ConvergenceSteps=20,BatchSize=30,TestRepetitions=7,WeightDecay=0.0,L1=false,DropFraction=0.0,DropRepetitions=5");
     TString nnOptions(

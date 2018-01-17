@@ -172,6 +172,12 @@ int treeFormat(const std::string inFileName)
     }
 
     learnTree_p->Fill();
+
+    if(TMath::Abs(evtPlanePhi_) <= 1) continue;
+    if(evtPlanePhi_ < -1.) evtPlanePhi_ += TMath::Pi();
+    else if(evtPlanePhi_ > 1.) evtPlanePhi_ -= TMath::Pi();
+
+    learnTree_p->Fill();
   }
 
   inFile_p->Close();
