@@ -116,10 +116,22 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   //  dataloader->AddVariable( "phoSCPhiWidth", "Super Cluster Phi Width", "", 'F' );
   //  dataloader->AddVariable( "hiBin/2", "Centrality", "", 'F' );
 
+  const Int_t nHFTow = 72;
+  const Int_t nJtPixel = 121;
+
   dataloader->AddVariable("hiBin", "Centrality", "", 'I');
-  for(Int_t bI = 0; bI < 72; ++bI){
+  dataloader->AddVariable("vz", "Vertex", "", 'F');
+  dataloader->AddVariable("jtphi", "Jet Phi", "", 'F');
+  dataloader->AddVariable("jteta", "Jet Eta", "", 'F');
+  dataloader->AddVariable("evtPlanePhi", "Event Plane", "", 'F');
+  for(Int_t bI = 0; bI < nHFTow; ++bI){
     dataloader->AddVariable(("etaPhiSum_Collapse" + std::to_string(bI)).c_str(), "", "", 'F');
   }
+
+  for(Int_t bI = 0; bI < nJtPixel; ++bI){
+    dataloader->AddVariable(("jtPixel" + std::to_string(bI)).c_str(), "", "", 'F');
+  }
+  
 
   // You can add so-called "Spectator variables", which are not used in the MVA training,
   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
@@ -128,7 +140,7 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
   //  dataloader->AddSpectator( "spec2:=var1*3",  "Spectator 2", "units", 'F' );
   // Add the variable carrying the regression target
 
-  dataloader->AddTarget("evtPlanePhi");
+  dataloader->AddTarget("refpt");
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* learnTree_p = (TTree*)inFile_p->Get("learnTree");
@@ -137,7 +149,7 @@ int flowTMVA(const std::string inFileName, TString myMethodList = "" )
 
   std::cout << "DO prep.." << std::endl;
   // tell the DataLoader to use all remaining events in the trees after training for testing:
-  dataloader->PrepareTrainingAndTestTree("hiBin >= 40 && hiBin < 60", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
+  dataloader->PrepareTrainingAndTestTree("hiBin >= 40 && hiBin < 60 && refpt > 25 && jteta < 1. && jteta > -1.", "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V");
   std::cout << "End prep.." << std::endl;
 
   //
