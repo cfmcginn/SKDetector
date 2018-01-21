@@ -4,6 +4,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TDatime.h"
+#include "TMath.h"
 
 #include "include/pseudoTowerGeometry.h"
 #include "include/getLinBins.h"
@@ -18,6 +19,17 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
 
   std::vector<double> etaTowBounds = pTow.getEtaTowBounds();
   std::vector<int> etaTowNPhi = pTow.getNTowInPhi();
+  const Int_t nPhiTow72 = 72;
+  const Int_t nPhiTow36 = 36;
+  const Int_t nPhiTow18 = 18;
+  Double_t phiTow72[nPhiTow72+1];
+  Double_t phiTow36[nPhiTow36+1];
+  Double_t phiTow18[nPhiTow18+1];
+  getLinBins(-TMath::Pi(), TMath::Pi(), nPhiTow72, phiTow72);
+  getLinBins(-TMath::Pi(), TMath::Pi(), nPhiTow36, phiTow36);
+  getLinBins(-TMath::Pi(), TMath::Pi(), nPhiTow18, phiTow18);
+
+  std::vector<double> towEtaCentGlobal;
 
   std::vector<double> towEtaLow;
   std::vector<double> towEtaHi;
@@ -35,6 +47,8 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
   std::cout << etaTowBounds.size() << ", " << etaTowNPhi.size() << std::endl;
 
   for(unsigned int tI = 0; tI < etaTowNPhi.size(); ++tI){
+    towEtaCentGlobal.push_back((etaTowBounds.at(tI) + etaTowBounds.at(tI+1))/2.);
+
     if(etaTowNPhi.at(tI) > 36) continue;
 
     if(TMath::Abs(etaTowBounds.at(tI)) <= 3 && TMath::Abs(etaTowBounds.at(tI+1)) <= 3) continue;
@@ -75,6 +89,10 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
   Float_t jtetaOut_ = -999;
   Float_t refptOut_ = -999;
 
+  const Int_t nJtPixels1D = 11;
+  const Int_t nJtPixels = nJtPixels1D*nJtPixels1D;
+  Float_t jtPixels[nJtPixels+1];
+
   learnTree_p->Branch("run", &run_, "run/i");
   learnTree_p->Branch("lumi", &lumi_, "lumi/i");
   learnTree_p->Branch("evt", &evt_, "evt/l");
@@ -94,6 +112,10 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
     learnTree_p->Branch("jtphi", &jtphiOut_, "jtphi/F");
     learnTree_p->Branch("jteta", &jtetaOut_, "jteta/F");
     learnTree_p->Branch("refpt", &refptOut_, "refpt/F");
+
+    for(Int_t jI = 0; jI < nJtPixels; ++jI){
+      learnTree_p->Branch(("jtPixel" + std::to_string(jI)).c_str(), &jtPixels[jI], ("jtPixel" + std::to_string(jI) + "/F").c_str());
+    }
   }
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
@@ -132,6 +154,7 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
   hiTree_p->SetBranchStatus("lumi", 1);
   hiTree_p->SetBranchStatus("evt", 1);
   hiTree_p->SetBranchStatus("hiBin", 1);
+  hiTree_p->SetBranchStatus("vz", 1);
   hiTree_p->SetBranchStatus("hiNevtPlane", 1);
   hiTree_p->SetBranchStatus("hiEvtPlanes", 1);
 
@@ -139,6 +162,7 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
   hiTree_p->SetBranchAddress("lumi", &lumi_);
   hiTree_p->SetBranchAddress("evt", &evt_);
   hiTree_p->SetBranchAddress("hiBin", &hiBin_);
+  hiTree_p->SetBranchAddress("vz", &vz_);
   hiTree_p->SetBranchAddress("hiNevtPlane", &hiNevtPlane_);
   hiTree_p->SetBranchAddress("hiEvtPlanes", hiEvtPlanes_);
 
@@ -183,10 +207,10 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
     jtphiOut_ = -999;
     jtetaOut_ = -999;
     refptOut_ = -999;
+
+    for(Int_t i = 0; i < nJtPixels; ++i){jtPixels[i] = 0.0;}
     
-    for(Int_t i = 0; i < nEtaPhiTowCollapse; ++i){
-      etaPhiSum_Collapse_[i] = 0.0;
-    }
+    for(Int_t i = 0; i < nEtaPhiTowCollapse; ++i){etaPhiSum_Collapse_[i] = 0.0;}
 
     for(unsigned int pI = 0; pI < pfPt_p->size(); ++pI){
       Int_t etaPos = -1;
@@ -231,6 +255,42 @@ int treeFormat(const std::string inFileName, const bool doJetStyle = false)
 	jtphiOut_ = jtphi_[jI];
 	jtetaOut_ = jteta_[jI];
 	refptOut_ = refpt_[jI];
+
+	for(Int_t i = 0; i < nJtPixels; ++i){jtPixels[i] = 0.0;}
+
+	Int_t jtEtaPos = -1;
+	Int_t jtPhiPos = -1;
+
+	for(unsigned int eI = 0; eI < etaTowNPhi.size(); ++eI){
+	  if(jtetaOut_ >= etaTowBounds.at(eI) && jtetaOut_ < etaTowBounds.at(eI+1)){
+	    jtEtaPos = eI;
+	    break;
+	  }
+	}
+
+	for(Int_t eI = 0; eI < nPhiTow72; ++eI){
+	  if(jtphiOut_ >= phiTow72[eI] && jtphiOut_ < phiTow72[eI+1]){
+	    jtPhiPos = eI;
+	    break;
+	  }
+	}
+
+	for(Int_t pI = 0; pI < nJtPixels1D; ++pI){
+	  Int_t currEtaPos = jtEtaPos - 5 + pI;
+
+	  for(Int_t pI2 = 0; pI2 < nJtPixels1D; ++pI2){
+	    Int_t currPhiPos = jtPhiPos - 5 + pI2;
+
+	    for(unsigned int pfI = 0; pfI < pfPt_p->size(); ++pfI){
+	      if(pfEta_p->at(pfI) >= etaTowBounds.at(currEtaPos) && pfEta_p->at(pfI) < etaTowBounds.at(currEtaPos+1)){
+		if(pfPhi_p->at(pfI) >= phiTow72[currPhiPos] && pfPhi_p->at(pfI) < phiTow72[currPhiPos+1]){
+		  jtPixels[pI*nJtPixels1D + pI2] += pfPt_p->at(pfI);
+		}
+	      }
+	    }
+	  }
+	}
+
 
 	learnTree_p->Fill();
       }
