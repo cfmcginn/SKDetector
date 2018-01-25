@@ -16,7 +16,7 @@ void TMVARun()
   std::string cuts_pt[]={"&& refpt>30 && refpt<50","&& refpt>50 && refpt<70","&& refpt>70 && refpt<100"};*/
 
   for (int i=0;i<nCentCuts;i++){
-    TString filename=TMVARegression("std::abs(jteta)<2 && jtpt>30 && refpt>10 "+cuts_cent[i], names_cent[i], n_input);
+    TString filename=TMVARegression("std::abs(jteta)<2 && refpt>10 "+cuts_cent[i], names_cent[i], n_input);
     //    TString filename="/afs/cern.ch/work/s/skanaski/TMVAReg"+names_cent[i]+".root";
 
     TFile* file=TFile::Open(filename);

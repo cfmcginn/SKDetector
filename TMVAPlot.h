@@ -24,10 +24,12 @@ public :
    // Declaration of leaf types
    Int_t           classID;
    Char_t          className[11];
-   Float_t         jtpt;
+   Float_t         rawpt;
    Float_t         jteta;
+   Float_t         jtphi;
    Float_t         refpt;
    Float_t         weight;
+   Float_t         evtPlanePhi;
    //   Float_t         BDT;
    //   Float_t         BDTG;
    Float_t         DNN;
@@ -37,10 +39,12 @@ public :
    // List of branches
    TBranch        *b_classID;   //!
    TBranch        *b_className;   //!
-   TBranch        *b_jtpt;   //!
+   TBranch        *b_rawpt;   //!
    TBranch        *b_jteta;
+   TBranch        *b_jtphi;
    TBranch        *b_refpt;   //!
    TBranch        *b_weight;   //!
+   TBranch        *b_evtPlanePhi;
    //   TBranch        *b_refpt_BDT;   //!
    //   TBranch        *b_refpt_BDTG;   //!
    TBranch        *b_refpt_DNN;   //!
@@ -120,10 +124,12 @@ void TMVAPlot::Init(TTree *tree)
 
    fChain->SetBranchAddress("classID", &classID, &b_classID);
    fChain->SetBranchAddress("className", className, &b_className);
-   fChain->SetBranchAddress("jtpt", &jtpt, &b_jtpt);
+   fChain->SetBranchAddress("rawpt", &rawpt, &b_rawpt);
    fChain->SetBranchAddress("jteta", &jteta, &b_jteta);
+   fChain->SetBranchAddress("jtphi", &jtphi, &b_jtphi);
    fChain->SetBranchAddress("refpt", &refpt, &b_refpt);
    fChain->SetBranchAddress("weight", &weight, &b_weight);
+   fChain->SetBranchAddress("evtPlanePhi", &evtPlanePhi, &b_evtPlanePhi);
    //   fChain->SetBranchAddress("BDT", &BDT, &b_refpt_BDT);
    //   fChain->SetBranchAddress("BDTG", &BDTG, &b_refpt_BDTG);
    fChain->SetBranchAddress("DNN_CPU", &DNN, &b_refpt_DNN);

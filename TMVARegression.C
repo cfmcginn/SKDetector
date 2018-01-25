@@ -103,18 +103,27 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
   //  dataloader->AddVariable( "phoR9", "R9", "", 'F' );
   //  dataloader->AddVariable( "phoSCPhiWidth", "Super Cluster Phi Width", "", 'F' );
   //  dataloader->AddVariable( "hiBin/2", "Centrality", "", 'F' );
-  dataloader->AddVariable( "jtpt", "Jet pt", "GeV", 'F' );
+  //  dataloader->AddVariable( "rawpt", "Jet pt", "GeV", 'F' );
   dataloader->AddVariable( "jteta", "Jet eta", "", 'F' );
   dataloader->AddVariable( "jtphi", "Jet phi", "", 'F' );
   dataloader->AddVariable( "hiBin", "Centrality", "", 'F' );
   dataloader->AddVariable( "vz", "Vertex displacement", "", 'F' );
-  dataloader->AddVariable( "hiEvtPlanes[8]", "Event Plane Phi", "", 'F' );
+  dataloader->AddVariable( "evtPlanePhi", "Event Plane Phi", "", 'F' );
+  for (int i=0;i<72;i++)
+    {
+      dataloader->AddVariable( ("etaPhiSum_Collapse"+std::to_string(i)).c_str(), ("eta-phi sum "+std::to_string(i)).c_str(), "GeV", 'F' );
+    }
+  for (int i=0;i<121;i++)
+    {
+      dataloader->AddVariable( ("jtPixel"+std::to_string(i)).c_str(), ("jet pixel "+std::to_string(i)).c_str(), "GeV", 'F' );
+    }
   //  dataloader->AddVariable( "hiEvtPlanes[8]", "Event Plane", "", 'F' );
   // You can add so-called "Spectator variables", which are not used in the MVA training,
   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
   // input variables, the response values of all trained MVAs, and the spectator variables
   //  dataloader->AddSpectator( "phoEt",  "Photon Et", "GeV", 'F' );
   //  dataloader->AddSpectator( "spec2:=var1*3",  "Spectator 2", "units", 'F' );
+  dataloader->AddSpectator( "rawpt", "Raw pt", "GeV", 'F' );
   // Add the variable carrying the regression target
   dataloader->AddTarget( "refpt" );
   // It is also possible to declare additional targets for multi-dimensional regression, ie:
@@ -155,7 +164,10 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
       //  dataloader->SetWeightExpression( "var1", "Regression" );
       }*/
   TFile *input(0);
-  TString fname = "/afs/cern.ch/work/s/skanaski/jetstuff/merge.root";
+  //  TString fname = "/afs/cern.ch/work/s/skanaski/jetstuff/merge.root";
+  //TString fname = "/data/cmcginn/Forests/Pythia6HydjetDijet/embed30/SKDetector_20170929/skim/learn_20180118.root";
+  //  TString fname = "/data/cmcginn/Forests/Pythia6HydjetDijet/embed30/SKDetector_20170929/skim/learn_20180121.root";
+  TString fname = "/data/cmcginn/Forests/Pythia6HydjetDijet/learn_20180122.root";
   if (!gSystem->AccessPathName( fname )) {
     input = TFile::Open( fname ); // check if file in local directory exists
   }
@@ -169,10 +181,11 @@ TString TMVARegression( std::string cut, std::string name_cent, const int n_inpu
   }
   std::cout << "--- TMVARegression           : Using input file: " << input->GetName() << std::endl;
   // Register the regression tree
+  TTree *regTree = (TTree*)input->Get("learnTree");
   //  TTree *regTree = (TTree*)input->Get("rhoTree");
-  TTree* regTree = (TTree*)input->Get("akPu4PFJetAnalyzer/t");
-  TTree *centTree=(TTree*)input->Get("hiEvtAnalyzer/HiTree");
-  regTree->AddFriend(centTree);
+  //  TTree* regTree = (TTree*)input->Get("akPu4PFJetAnalyzer/t");
+  //  TTree *centTree=(TTree*)input->Get("hiEvtAnalyzer/HiTree");
+  //  regTree->AddFriend(centTree);
   // global event weights per tree (see below for setting event-wise weights)
   Double_t regWeight  = 1.0;
   // You can add an arbitrary number of regression trees
