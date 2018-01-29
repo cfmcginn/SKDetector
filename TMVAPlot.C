@@ -30,7 +30,7 @@ float sep(float evtPlanePhi, float jtphi)
   else return sep[1];
 }
 
-void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::string outpath="hists_tmva/")
+std::vector<std::string>* TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::string outpath="hists_tmva/")
 {
 //   In a ROOT session, you can do:
 //      root> .L TMVAPlot.C
@@ -55,10 +55,11 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
 // METHOD2: replace line
 //    fChain->GetEntry(jentry);       //read all branches
 //by  b_branchname->GetEntry(ientry); //read only this branch
-   if (fChain == 0) return;
+   if (fChain == 0) return 0;
 
    TFile* outfile=new TFile((outpath+"out"+name_cent+".root").c_str(),"RECREATE");
-   
+   CustomCanvas* c1=new CustomCanvas("c1", "c1", 800, 800);
+
    // histograms
    //   std::string title_cent=", Cent 0-30";
    //   std::string name_cent="_cent0";
@@ -181,7 +182,7 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
 
      gStyle->SetOptStat("e");
 
-     TCanvas* c1=new TCanvas("c1", "c1", 800, 800);
+     TLegend* h_legend=new TLegend(0.1,0.7,0.3,0.9);
 
      TLatex* label=new TLatex();
      label->SetNDC();
@@ -191,19 +192,31 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
      //     h_mEScale_all->SetStats(false);
      //     h_EScale_all->SetStats(false);
 
-     h_mEScale_all->Draw();
-     h_EScale_all->Draw("*hist same");
-     h_mEScale_all->Draw("same");
-
-     label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale_all->GetMean())).c_str());
-     label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale_all->GetStdDev())).c_str());
-     label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale_all->GetMean())).c_str());
-     label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale_all->GetStdDev())).c_str());
+     h_EScale_all->SetLineColor(kRed);
+     h_legend->AddEntry(h_mEScale_all, "DNN", "l");
+     h_legend->AddEntry(h_EScale_all, "forest", "l");
+     h_legend->SetTextSize(-2);
+     if (h_mEScale_all->GetBinContent(h_mEScale_all->GetMaximumBin())>h_EScale_all->GetBinContent(h_EScale_all->GetMaximumBin()))
+       {
+	 h_mEScale_all->Draw();
+	 h_EScale_all->Draw("same");
+       }
+     else
+       {
+	 h_EScale_all->Draw();
+	 h_mEScale_all->Draw("same");
+       }
+     h_legend->Draw();
+     
+     label->DrawLatex(0.70,0.85,("\\mu_{DNN}="+std::to_string(h_mEScale_all->GetMean())).c_str());
+     label->DrawLatex(0.70,0.80,("\\sigma_{DNN}="+std::to_string(h_mEScale_all->GetStdDev())).c_str());
+     label->DrawLatex(0.70,0.75,("\\mu_{for}="+std::to_string(h_EScale_all->GetMean())).c_str());
+     label->DrawLatex(0.70,0.70,("\\sigma_{for}="+std::to_string(h_EScale_all->GetStdDev())).c_str());
      c1->SaveAs((outpath+(std::string)h_EScale_all->GetName()+".png").c_str());
      
      gStyle->SetOptStat("emr");
      h_mCorr_all->Draw();
-     c1->SaveAs((outpath+(std::string)h_mCorr_all->GetName()+".png").c_str());
+     //     c1->SaveAs((outpath+(std::string)h_mCorr_all->GetName()+".png").c_str());
 
      gStyle->SetOptStat("e");
 
@@ -215,19 +228,28 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
      //     h_mEScale_all->SetStats(false);
      //     h_EScale_all->SetStats(false);
 
-     h_mEScale_all__inPlane->Draw();
-     h_EScale_all__inPlane->Draw("*hist same");
-     h_mEScale_all__inPlane->Draw("same");
+     h_EScale_all__inPlane->SetLineColor(kRed);
+     if (h_mEScale_all__inPlane->GetBinContent(h_mEScale_all__inPlane->GetMaximumBin())>h_EScale_all__inPlane->GetBinContent(h_EScale_all__inPlane->GetMaximumBin()))
+       {
+         h_mEScale_all__inPlane->Draw();
+         h_EScale_all__inPlane->Draw("same");
+       }
+     else
+       {
+         h_EScale_all__inPlane->Draw();
+         h_mEScale_all__inPlane->Draw("same");
+       }
+     h_legend->Draw();
 
-     label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale_all__inPlane->GetMean())).c_str());
-     label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale_all__inPlane->GetStdDev())).c_str());
-     label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale_all__inPlane->GetMean())).c_str());
-     label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale_all__inPlane->GetStdDev())).c_str());
+     label->DrawLatex(0.70,0.85,("\\mu_{DNN}="+std::to_string(h_mEScale_all__inPlane->GetMean())).c_str());
+     label->DrawLatex(0.70,0.80,("\\sigma_{DNN}="+std::to_string(h_mEScale_all__inPlane->GetStdDev())).c_str());
+     label->DrawLatex(0.70,0.75,("\\mu_{for}="+std::to_string(h_EScale_all__inPlane->GetMean())).c_str());
+     label->DrawLatex(0.70,0.70,("\\sigma_{for}="+std::to_string(h_EScale_all__inPlane->GetStdDev())).c_str());
      c1->SaveAs((outpath+(std::string)h_EScale_all__inPlane->GetName()+".png").c_str());
 
      gStyle->SetOptStat("emr");
      h_mCorr_all__inPlane->Draw();
-     c1->SaveAs((outpath+(std::string)h_mCorr_all__inPlane->GetName()+".png").c_str());
+     //     c1->SaveAs((outpath+(std::string)h_mCorr_all__inPlane->GetName()+".png").c_str());
 
      gStyle->SetOptStat("e");
 
@@ -239,19 +261,28 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
      //     h_mEScale_all->SetStats(false);
      //     h_EScale_all->SetStats(false);
 
-     h_mEScale_all__outPlane->Draw();
-     h_EScale_all__outPlane->Draw("*hist same");
-     h_mEScale_all__outPlane->Draw("same");
+     h_EScale_all__outPlane->SetLineColor(kRed);
+     if (h_mEScale_all__outPlane->GetBinContent(h_mEScale_all__outPlane->GetMaximumBin())>h_EScale_all__outPlane->GetBinContent(h_EScale_all__outPlane->GetMaximumBin()))
+       {
+         h_mEScale_all__outPlane->Draw();
+         h_EScale_all__outPlane->Draw("same");
+       }
+     else
+       {
+         h_EScale_all__outPlane->Draw();
+         h_mEScale_all__outPlane->Draw("same");
+       }
+     h_legend->Draw();
 
-     label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale_all__outPlane->GetMean())).c_str());
-     label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale_all__outPlane->GetStdDev())).c_str());
-     label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale_all__outPlane->GetMean())).c_str());
-     label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale_all__outPlane->GetStdDev())).c_str());
+     label->DrawLatex(0.70,0.85,("\\mu_{DNN}="+std::to_string(h_mEScale_all__outPlane->GetMean())).c_str());
+     label->DrawLatex(0.70,0.80,("\\sigma_{DNN}="+std::to_string(h_mEScale_all__outPlane->GetStdDev())).c_str());
+     label->DrawLatex(0.70,0.75,("\\mu_{for}="+std::to_string(h_EScale_all__outPlane->GetMean())).c_str());
+     label->DrawLatex(0.70,0.70,("\\sigma_{for}="+std::to_string(h_EScale_all__outPlane->GetStdDev())).c_str());
      c1->SaveAs((outpath+(std::string)h_EScale_all__outPlane->GetName()+".png").c_str());
 
      gStyle->SetOptStat("emr");
      h_mCorr_all__outPlane->Draw();
-     c1->SaveAs((outpath+(std::string)h_mCorr_all__outPlane->GetName()+".png").c_str());
+     //     c1->SaveAs((outpath+(std::string)h_mCorr_all__outPlane->GetName()+".png").c_str());
      
      for (int i=0;i<3*nEtaCuts;i++)
        {
@@ -283,27 +314,41 @@ void TMVAPlot::Loop(std::string title_cent="", std::string name_cent="", std::st
 
 	 gStyle->SetOptStat("e");
 
-	 h_mEScale->Draw();
-	 h_EScale->Draw("*hist same");
-	 h_mEScale->Draw("same");
+	 h_EScale->SetLineColor(kRed);
+	 if (h_mEScale->GetBinContent(h_mEScale->GetMaximumBin())>h_EScale->GetBinContent(h_EScale->GetMaximumBin()))
+	   {
+	     h_mEScale->Draw();
+	     h_EScale->Draw("same");
+	   }
+	 else
+	   {
+	     h_EScale->Draw();
+	     h_mEScale->Draw("same");
+	   }
+	 h_legend->Draw();
 
-	 label->DrawLatex(0.15,0.80,("\\mu_{DNN}="+std::to_string(h_mEScale->GetMean())).c_str());
-	 label->DrawLatex(0.15,0.75,("\\sigma_{DNN}="+std::to_string(h_mEScale->GetStdDev())).c_str());
-	 label->DrawLatex(0.65,0.80,("\\mu_{for}="+std::to_string(h_EScale->GetMean())).c_str());
-	 label->DrawLatex(0.65,0.75,("\\sigma_{for}="+std::to_string(h_EScale->GetStdDev())).c_str());
+	 label->DrawLatex(0.70,0.85,("\\mu_{DNN}="+std::to_string(h_mEScale->GetMean())).c_str());
+	 label->DrawLatex(0.70,0.80,("\\sigma_{DNN}="+std::to_string(h_mEScale->GetStdDev())).c_str());
+	 label->DrawLatex(0.70,0.75,("\\mu_{for}="+std::to_string(h_EScale->GetMean())).c_str());
+	 label->DrawLatex(0.70,0.70,("\\sigma_{for}="+std::to_string(h_EScale->GetStdDev())).c_str());
 	 c1->SaveAs((outpath+(std::string)h_EScale->GetName()+".png").c_str());
 	 
 	 gStyle->SetOptStat("emr");
 	 h_mCorr->Draw();
-	 c1->SaveAs((outpath+(std::string)h_mCorr->GetName()+".png").c_str());
+	 //	 c1->SaveAs((outpath+(std::string)h_mCorr->GetName()+".png").c_str());
        }
      /*   for (std::string name : plotList)
 	  {
 	  hist_map[name]->Draw();
 	  c1->SaveAs(("hists_tmva/"+(std::string)hist_map[name]->GetName()+"_cent70.png").c_str());
 	  }*/
-     delete c1;
    }
+
+   std::vector<std::string>* retVal=c1->GetPointer();
+   delete c1;
+
    outfile->Write();
    outfile->Close();
+
+   return retVal;
 }

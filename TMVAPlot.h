@@ -57,7 +57,7 @@ public :
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual void     Loop(std::string title_cent, std::string name_cent, std::string outpath);
+   virtual std::vector<std::string>*     Loop(std::string title_cent, std::string name_cent, std::string outpath);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };
@@ -164,3 +164,28 @@ Int_t TMVAPlot::Cut(Long64_t entry)
    return 1;
 }
 #endif // #ifdef TMVAPlot_cxx
+
+class CustomCanvas{
+ private:
+  TCanvas* c;
+  std::vector<std::string>* histNames=new std::vector<std::string>();
+
+ public:
+  std::vector<std::string>* GetPointer()
+    {
+      return histNames;
+    }
+  void SaveAs(const char* filename="", Option_t* option="")
+  {
+    histNames->push_back(((std::string)filename).substr(11));
+    c->SaveAs(filename, option);
+  }
+  CustomCanvas(const char* name, const char* title, Int_t ww, Int_t wh)
+    {
+      c=new TCanvas(name, title, ww, wh);
+    }
+  ~CustomCanvas()
+    {
+      delete c;
+    }
+};
