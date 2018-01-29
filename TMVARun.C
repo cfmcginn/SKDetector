@@ -7,6 +7,7 @@ const int n_input=25;
 void TMVARun(bool doRegression=false)
 {
   std::vector<std::vector<std::string>*>* histVectorVector=new std::vector<std::vector<std::string>*>();
+  std::vector<std::vector<std::string>*>* histVectorVector_train=new std::vector<std::vector<std::string>*>();
   
   const int nCentCuts=2;
   std::string titles_cent[]={", Cent 0-10",", Cent 10-30",", Cent 30-50",", Cent 50-70",", Cent 70-100"};
@@ -31,10 +32,11 @@ void TMVARun(bool doRegression=false)
 
     TTree* train=(TTree*)file->Get("dataset/TrainTree");
     TMVAPlot t_train(train);
-    t_train.Loop(titles_cent[i],names_cent[i],"hists_test/train/");
+    histVectorVector_train->push_back(t_train.Loop(titles_cent[i],names_cent[i],"hists_test/train/"));
   }
   
-  TMVASlides(histVectorVector);
+  TMVASlides(histVectorVector,"hists_test/slides_test.tex");
+  TMVASlides(histVectorVector_train,"hists_test/slides_train.tex"
 
   TDatime* date=new TDatime();
   gSystem->Exec(("tar -czvf /afs/cern.ch/user/s/skanaski/public/TMVAHists_"+std::to_string(date->GetDate())+".tar.gz hists_test").c_str());

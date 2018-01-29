@@ -12,7 +12,7 @@
 #include "TCanvas.h"
 #include "TPad.h"
 
-int TMVASlides(std::vector<std::vector<std::string>*>* hvv)
+int TMVASlides(std::vector<std::vector<std::string>*>* hvv, std::string outTexFileName = "hists_test/slides.tex")
 {
   /*  std::vector<std::string> hists_list={"h_EScale_cent0_pt30.png",
 				       "h_EScale_cent0_pt50.png",
@@ -30,7 +30,7 @@ int TMVASlides(std::vector<std::vector<std::string>*>* hvv)
 				       "h_EScale_cent70_pt50.png",
 				       "h_EScale_cent70_pt70.png"};
   */
-  const std::string outTexFileName = "hists_test/slides.tex";
+  //  const std::string outTexFileName = "hists_test/slides.tex";
   std::ofstream fileTex(outTexFileName.c_str());
   
   fileTex << "\\RequirePackage{xspace}" << std::endl;
