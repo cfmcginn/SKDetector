@@ -178,6 +178,7 @@ class CustomCanvas{
   void SaveAs(const char* filename="", Option_t* option="")
   {
     histNames->push_back(((std::string)filename).substr(11));
+
     c->SaveAs(filename, option);
   }
   CustomCanvas(const char* name, const char* title, Int_t ww, Int_t wh)

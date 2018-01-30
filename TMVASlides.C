@@ -12,7 +12,7 @@
 #include "TCanvas.h"
 #include "TPad.h"
 
-int TMVASlides(std::vector<std::vector<std::string>*>* hvv, std::string outTexFileName = "hists_test/slides.tex")
+int TMVASlides(std::vector<std::vector<std::string>*>* hvv, std::string outTexFileName = "hists_test/slides.tex", int nPlots=1)
 {
   /*  std::vector<std::string> hists_list={"h_EScale_cent0_pt30.png",
 				       "h_EScale_cent0_pt50.png",
@@ -111,7 +111,12 @@ int TMVASlides(std::vector<std::vector<std::string>*>* hvv, std::string outTexFi
 	fileTex << "\\begin{frame}" << std::endl;
 	//    fileTex << "\\frametitle{\\centerline{" << newVarStr << "}}" << std::endl;
 	fileTex << "\\begin{center}" << std::endl;
-	fileTex << "\\includegraphics[width=0.8\\textwidth]{" << hists_list->at(i) << "}" << std::endl;
+	for (int j=0;j<nPlots&&i<hists_list->size();j++)
+	  {
+	    fileTex << "\\includegraphics[width="<<std::to_string((float)0.8/nPlots)<<"\\textwidth]{" << hists_list->at(i) << "}" << std::endl;
+	    i++;
+	  }
+	i--;
 	fileTex << "\\end{center}" << std::endl;
 	/*    fileTex << "\\begin{itemize}" << std::endl;
 	      fileTex << "\\fontsize{8}{8}\\selectfont" << std::endl;
